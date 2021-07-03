@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <stdbool.h>
 
 char * __DIR_;
 char * __FILE_;
@@ -16,7 +17,8 @@ int in_array(char **array,int array_size,char *needle);
 int count_depth(char* path,char *start,char separator);
 int count_flag_occurences(char **flags,int nb_flags,char *f);
 int verifiy_flags(char **flags,int nb_flags);
-void print_stat(char *path,char **flags,int nb_flags);
+bool does_the_file_match_the_wildcard_pattern(char *file,char *pattern);
+void print_stat(char *path,char **flags,int nb_flags,char *reel_file);
 void recursive_file_search(char *dir_name ,char *file_name);
 void search_file(char *dir_name,char *file_name);
 void search_file_with_options(char *dir_name,char **flags,int nb_flags,char *file_name);
@@ -52,7 +54,9 @@ void main(int argc,char *argv[]){
 }
 
 int is_it_our_file(struct dirent *de,char *file_name){
-    return de->d_type != DT_DIR && strcmp(de->d_name,file_name) == 0 ? 0 : 1;
+    //int match = does_the_file_match_the_wildcard_pattern(de->d_name,__FILE_);
+    //return de->d_type != DT_DIR && match == 0 ? 0 : 1;
+    return (de->d_type != DT_DIR && does_the_file_match_the_wildcard_pattern(de->d_name,__FILE_)) ? 0 : 1;
 }
 
 int is_a_directory(struct dirent *de){
@@ -164,7 +168,7 @@ void search_file_with_options(char *dir_name,char **flags,int nb_flags,char *fil
             else
                 sprintf(full_path, "%s/%s", dir_name, de->d_name);
 
-            print_stat(full_path,flags,nb_flags);
+            print_stat(full_path,flags,nb_flags,de->d_name);
         }   
         else if(is_a_directory(de) == 0){
 
@@ -196,7 +200,53 @@ int count_depth(char *path,char *start,char separator){
     return occurence;
 }
 
-void print_stat(char *path,char **flags,int nb_flags){
+bool does_the_file_match_the_wildcard_pattern(char *file,char *pattern){
+
+    bool match = strcmp(file,pattern) == 0 ? true:false;
+    int i=0,k=0;
+
+    if(match)
+        return true;
+
+    match = true;
+
+    while(pattern[i] != '\0'){
+
+        if(pattern[i] == '?' && pattern[i+1] == '\0' && file[k+1] != '\0'){
+            i++;
+            match = false;
+        }else if(pattern[i] == '?'){
+            i++;
+            k++;
+        }else if(pattern[i] == '*'){
+            if(pattern[i+1] != '\0' && pattern[i+1] == file[k]){
+                i++;
+            }else if(pattern[i+1] != '\0'){
+                while(file[k] != pattern[i+1] && file[k] != '\0'){
+                    k++;
+                }
+                i++;
+                if(file[k] == '\0'){
+                    match = false;
+                    break;
+                }
+            }else if(pattern[i+1] == '\0'){
+                i++;
+            }
+        }else{
+            if(file[k] != pattern[i]){
+                match = false;
+                break;
+            }
+            i++;
+            k++; 
+        }
+    }
+
+    return match;
+}
+
+void print_stat(char *path,char **flags,int nb_flags,char *reel_file){
 
     if(__DEPTH_FLAG == -1 || count_depth(path,__DIR_,'/') <= __DEPTH_FLAG){
         struct stat sb;
@@ -206,7 +256,6 @@ void print_stat(char *path,char **flags,int nb_flags){
         }
 
         printf("%s ",path);
-        printf("-l %d",count_depth(path,__DIR_,'/'));
         for (int i = 0; i < nb_flags; i++)
         {
             if(strcmp(flags[i],"-d") == 0){
@@ -252,3 +301,4 @@ void print_stat(char *path,char **flags,int nb_flags){
         printf("\n\n");   
     }
 }
+
