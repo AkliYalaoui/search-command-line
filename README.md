@@ -22,6 +22,15 @@ like ? (for a single character) and * (for 0 or multiple characters)
 
 ## clone this project
 git clone https://github.com/AkliYalaoui/search-command-line.git  
-cd search-command-line  
+## Go to the project
+cd search-command-line 
+## Compile it
 gcc search.c  
+## Run it to test it
 ./a.out [Directory_name]    [-options]    File_name
+## Rename the file generated after compiling the code
+mv a.out search
+## copy the command to the bin folder to make it available globally on the system
+cp search /bin
+## try the command
+search [Directory_name]    [-options]    File_name
