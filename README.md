@@ -22,7 +22,7 @@ like ? (for a single character) and * (for 0 or multiple characters)
 # How to install
 
 ## clone this project
-git clone https://github.com/AkliYalaoui/search-command-line.git\s\s
-cd search-command-line\s\s
-gcc search.c\s\s
+git clone https://github.com/AkliYalaoui/search-command-line.git  
+cd search-command-line  
+gcc search.c  
 ./a.out [Directory_name]    [-options]    File_name
