@@ -6,9 +6,14 @@
 #include <time.h>
 #include <sys/stat.h>
 
+char * __DIR_;
+char * __FILE_;
+int  __DEPTH_FLAG = -1;
+
 int is_a_directory(struct dirent *de);
 int is_it_our_file(struct dirent *de,char *file_name);
 int in_array(char **array,int array_size,char *needle);
+int count_depth(char* path,char *start,char separator);
 int count_flag_occurences(char **flags,int nb_flags,char *f);
 int verifiy_flags(char **flags,int nb_flags);
 void print_stat(char *path,char **flags,int nb_flags);
@@ -25,12 +30,14 @@ void main(int argc,char *argv[]){
         return;
     }
 
-    file_name = argv[argc-1];
+    __FILE_ = argv[argc-1];
+    __DIR_ = argv[1];
 
     if(argc == 2){
-        search_file(".",file_name);
-    }else if(argc == 3){
-         search_file(argv[1],file_name);
+        strcpy(__DIR_,".");
+        search_file(__DIR_,__FILE_);
+    }else if(argc == 3){ 
+         search_file(__DIR_,__FILE_);
     }else if(argc >= 4){
          char *flags[argc-3];
         for(int i = 2; i < argc - 1;i++)
@@ -39,7 +46,7 @@ void main(int argc,char *argv[]){
         if(verifiy_flags(flags,argc-3) == 1){
             printf("Unknown flag provided to the command\n");
         }else{
-            search_file_with_options(argv[1],flags,argc-3,file_name);
+            search_file_with_options(__DIR_,flags,argc-3,__FILE_);
         }
     }
 }
@@ -78,6 +85,7 @@ int verifiy_flags(char **flags,int nb_flags){
         if(in_array(allowed_flags,6,flags[i]) == 1){
             
             if(strcmp(flags[i],"-0")== 0){
+                __DEPTH_FLAG = 0;
                 count_depth_flag++;
                 if(count_depth_flag > 1){
                     printf("too many depth flags passed to the command\n");
@@ -89,6 +97,7 @@ int verifiy_flags(char **flags,int nb_flags){
             tmp[0] = '0';
             int a = atoi(tmp);
             if(a == 0) return 1;
+            __DEPTH_FLAG = a;
             count_depth_flag++;
             if(count_depth_flag > 1){
                 printf("too many depth flags passed to the command\n");
@@ -170,56 +179,76 @@ void search_file_with_options(char *dir_name,char **flags,int nb_flags,char *fil
 
 }
 
+int count_depth(char *path,char *start,char separator){
+    
+    int occurence = 0,i=0;
+
+    while (start[i] != '\0')
+        i++;
+
+    while (path[i] != '\0')
+    {   
+        i++;
+        if(path[i] ==  separator)
+            occurence++;
+    }
+    
+    return occurence;
+}
+
 void print_stat(char *path,char **flags,int nb_flags){
 
-    struct stat sb;
-    if (stat(path, &sb) == -1) {
-        printf("Error occured while trying to read file metadata\n");
-        return;
-    }
-
-    printf("%s ",path);
-    for (int i = 0; i < nb_flags; i++)
-    {
-        if(strcmp(flags[i],"-d") == 0){
-            printf("-d %s ",ctime(&sb.st_atime));
-        }else if(strcmp(flags[i],"-m") == 0){
-            printf("-m %s ",ctime(&sb.st_mtime));
-        }else if(strcmp(flags[i],"-s") == 0){
-            printf("-s %lld bytes ",(long long) sb.st_size);
-        }else if(strcmp(flags[i],"-t") == 0){
-            printf("-t ");
-            switch (sb.st_mode & S_IFMT) {
-                case S_IFBLK:  printf("block device ");            break;
-                case S_IFCHR:  printf("character device ");        break;
-                case S_IFDIR:  printf("directory ");               break;
-                case S_IFIFO:  printf("FIFO/pipe ");               break;
-                case S_IFLNK:  printf("symlink ");                 break;
-                case S_IFREG:  printf("regular file ");            break;
-                case S_IFSOCK: printf("socket ");                  break;
-                default:       printf("unknown? ");                break;
-            }
-        }else if(strcmp(flags[i],"-p") == 0){
-            printf("-p %lo ",(unsigned long) sb.st_mode);
-        }else if(strcmp(flags[i],"-a") == 0){
-            printf("-d %s ",ctime(&sb.st_atime));
-            printf("-s %lld bytes ",(long long) sb.st_size);
-            printf("-m %s ",ctime(&sb.st_mtime));
-            printf("-t ");
-            switch (sb.st_mode & S_IFMT) {
-                case S_IFBLK:  printf("block device ");            break;
-                case S_IFCHR:  printf("character device ");        break;
-                case S_IFDIR:  printf("directory ");               break;
-                case S_IFIFO:  printf("FIFO/pipe ");               break;
-                case S_IFLNK:  printf("symlink ");                 break;
-                case S_IFREG:  printf("regular file ");            break;
-                case S_IFSOCK: printf("socket ");                  break;
-                default:       printf("unknown? ");                break;
-            }
-            printf("-p %lo ",(unsigned long) sb.st_mode);
-        }else{
-            
+    if(__DEPTH_FLAG == -1 || count_depth(path,__DIR_,'/') <= __DEPTH_FLAG){
+        struct stat sb;
+        if (stat(path, &sb) == -1) {
+            printf("Error occured while trying to read file metadata\n");
+            return;
         }
+
+        printf("%s ",path);
+        printf("-l %d",count_depth(path,__DIR_,'/'));
+        for (int i = 0; i < nb_flags; i++)
+        {
+            if(strcmp(flags[i],"-d") == 0){
+                printf("-d %s ",ctime(&sb.st_atime));
+            }else if(strcmp(flags[i],"-m") == 0){
+                printf("-m %s ",ctime(&sb.st_mtime));
+            }else if(strcmp(flags[i],"-s") == 0){
+                printf("-s %lld bytes ",(long long) sb.st_size);
+            }else if(strcmp(flags[i],"-t") == 0){
+                printf("-t ");
+                switch (sb.st_mode & S_IFMT) {
+                    case S_IFBLK:  printf("block device ");            break;
+                    case S_IFCHR:  printf("character device ");        break;
+                    case S_IFDIR:  printf("directory ");               break;
+                    case S_IFIFO:  printf("FIFO/pipe ");               break;
+                    case S_IFLNK:  printf("symlink ");                 break;
+                    case S_IFREG:  printf("regular file ");            break;
+                    case S_IFSOCK: printf("socket ");                  break;
+                    default:       printf("unknown? ");                break;
+                }
+            }else if(strcmp(flags[i],"-p") == 0){
+                printf("-p %lo ",(unsigned long) sb.st_mode);
+            }else if(strcmp(flags[i],"-a") == 0){
+                printf("-d %s ",ctime(&sb.st_atime));
+                printf("-s %lld bytes ",(long long) sb.st_size);
+                printf("-m %s ",ctime(&sb.st_mtime));
+                printf("-t ");
+                switch (sb.st_mode & S_IFMT) {
+                    case S_IFBLK:  printf("block device ");            break;
+                    case S_IFCHR:  printf("character device ");        break;
+                    case S_IFDIR:  printf("directory ");               break;
+                    case S_IFIFO:  printf("FIFO/pipe ");               break;
+                    case S_IFLNK:  printf("symlink ");                 break;
+                    case S_IFREG:  printf("regular file ");            break;
+                    case S_IFSOCK: printf("socket ");                  break;
+                    default:       printf("unknown? ");                break;
+                }
+                printf("-p %lo ",(unsigned long) sb.st_mode);
+            }else{
+                
+            }
+        }
+        printf("\n\n");   
     }
-    printf("\n\n");   
 }
