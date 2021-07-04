@@ -180,12 +180,11 @@ void search_file_with_options(char *dir_name, char **flags, int nb_flags, char *
 
     if (dr == NULL)
     {
-        printf("Could not open %s directory", dir_name);
+        //printf("Could not open %s directory\n", dir_name);
         return;
     }
     while ((de = readdir(dr)) != NULL)
     {
-
         if (is_it_our_file(de, file_name) == true)
         {
             if (strcmp(dir_name, "/") == 0)
@@ -200,7 +199,6 @@ void search_file_with_options(char *dir_name, char **flags, int nb_flags, char *
         }
         else if (is_a_directory(de) == true)
         {
-
             if (strcmp(dir_name, "/") == 0)
                 sprintf(new_dir_name, "%s%s", dir_name, de->d_name);
             else
@@ -209,6 +207,7 @@ void search_file_with_options(char *dir_name, char **flags, int nb_flags, char *
             search_file_with_options(new_dir_name, flags, nb_flags, file_name);
         }
     }
+    closedir(dr);
 }
 
 int count_depth(char *path, char *start, char separator)
@@ -300,7 +299,7 @@ void print_stat(char *path, char **flags, int nb_flags, char *reel_file)
         struct stat sb;
         if (stat(path, &sb) == -1)
         {
-            printf("Error occured while trying to read file metadata\n");
+            printf("Error occured while trying to read file metadata of %s\n",path);
             return;
         }
 
@@ -309,18 +308,25 @@ void print_stat(char *path, char **flags, int nb_flags, char *reel_file)
         {
             if (strcmp(flags[i], "-d") == 0)
             {
+                printf("\033[0;31m");//red
                 printf("-d %s ", ctime(&sb.st_atime));
+                printf("\033[0m");//reset
             }
             else if (strcmp(flags[i], "-m") == 0)
             {
+                printf("\033[0;34m");//blue
                 printf("-m %s ", ctime(&sb.st_mtime));
+                printf("\033[0m");//reset
             }
             else if (strcmp(flags[i], "-s") == 0)
             {
+                printf("\033[0;37m");//white
                 printf("-s %lld bytes ", (long long)sb.st_size);
+                printf("\033[0m");//reset
             }
             else if (strcmp(flags[i], "-t") == 0)
             {
+                printf("\033[0;35m");//purple
                 printf("-t ");
                 switch (sb.st_mode & S_IFMT)
                 {
@@ -349,16 +355,26 @@ void print_stat(char *path, char **flags, int nb_flags, char *reel_file)
                     printf("unknown? ");
                     break;
                 }
+                printf("\033[0m");//reset
             }
             else if (strcmp(flags[i], "-p") == 0)
             {
+                printf("\033[0;32m");//green
                 printf("-p %lo ", (unsigned long)sb.st_mode);
+                printf("\033[0m");//reset
             }
             else if (strcmp(flags[i], "-a") == 0)
             {
+                printf("\033[0;31m");//red
                 printf("-d %s ", ctime(&sb.st_atime));
+                printf("\033[0m");//reset
+                printf("\033[0;37m");//white
                 printf("-s %lld bytes ", (long long)sb.st_size);
+                printf("\033[0m");//reset
+                printf("\033[0;34m");//blue
                 printf("-m %s ", ctime(&sb.st_mtime));
+                printf("\033[0m");//reset
+                printf("\033[0;35m");//purple
                 printf("-t ");
                 switch (sb.st_mode & S_IFMT)
                 {
@@ -387,7 +403,10 @@ void print_stat(char *path, char **flags, int nb_flags, char *reel_file)
                     printf("unknown? ");
                     break;
                 }
+                printf("\033[0m");//reset
+                printf("\033[0;32m");//green
                 printf("-p %lo ", (unsigned long)sb.st_mode);
+                printf("\033[0m");//reset
             }
             else
             {
