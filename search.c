@@ -114,6 +114,9 @@ bool verifiy_flags(char **flags, int nb_flags)
                 continue;
             }
             char *tmp = flags[i];
+            if(tmp[0] != '-'){
+                return false;
+            }
             tmp[0] = '0';
             int a = atoi(tmp);
             if (a == 0)
