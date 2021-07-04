@@ -126,6 +126,10 @@ int count_flag_occurences(char **flags, int nb_flags, char *f)
     return cpt;
 }
 
+char** delete_redundant_flags(char **flags,int nb_flags){
+
+}
+
 bool verifiy_flags(char **flags, int nb_flags)
 {
 
@@ -161,6 +165,12 @@ bool verifiy_flags(char **flags, int nb_flags)
                 printf("too many depth flags passed to the command\n");
                 return false;
             }
+        }else if( count_flag_occurences(flags,nb_flags,flags[i]) > 1){
+            printf("flags are redundant\n");
+            return false;
+        }else if(strcmp(flags[i], "-a") != 0 && in_array(allowed_flags, 6, flags[i]) == true && in_array(flags, 6, "-a") == true){
+            printf("-a should not be used with other meta data flags\n");
+            return false;
         }
 
     return true;
@@ -241,7 +251,7 @@ bool does_the_file_match_the_wildcard_pattern(char *file, char *pattern)
             return false;
         }
         
-        if (pattern[i] == '?' && pattern[i + 1] == '\0' && file[k + 1] != '\0')
+        if (pattern[i] == '?' && pattern[i + 1] == '\0' && file[k + 1] != '\0' || pattern[i] == '?' && pattern[i + 1] != '\0' && file[k + 1] == '\0')
         {
             return false;
         }
