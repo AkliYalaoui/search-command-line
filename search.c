@@ -125,17 +125,12 @@ int count_flag_occurences(char **flags, int nb_flags, char *f)
 
     return cpt;
 }
-
-char** delete_redundant_flags(char **flags,int nb_flags){
-
-}
-
 bool verifiy_flags(char **flags, int nb_flags)
 {
 
     char *allowed_flags[6] = {"-d", "-m", "-s", "-t", "-p", "-a"};
     int count_depth_flag = 0;
-    for (int i = 0; i < nb_flags; i++)
+    for (int i = 0; i < nb_flags; i++){
         if (in_array(allowed_flags, 6, flags[i]) == false)
         {
 
@@ -168,11 +163,11 @@ bool verifiy_flags(char **flags, int nb_flags)
         }else if( count_flag_occurences(flags,nb_flags,flags[i]) > 1){
             printf("flags are redundant\n");
             return false;
-        }else if(strcmp(flags[i], "-a") != 0 && in_array(allowed_flags, 6, flags[i]) == true && in_array(flags, 6, "-a") == true){
+        }else if(strcmp(flags[i], "-a") != 0 && in_array(allowed_flags, 6, flags[i]) == true && in_array(flags, nb_flags, "-a") == true){
             printf("-a should not be used with other meta data flags\n");
             return false;
         }
-
+    }
     return true;
 }
 
