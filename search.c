@@ -11,6 +11,8 @@ char __DIR_[1000];
 char *__FILE_;
 int __DEPTH_FLAG = -1;
 
+char *normalize_pattern(char *pattern);
+char* remove_consecutive_occurences(char *word,char character);
 bool is_a_directory(struct dirent *de);
 bool is_it_our_file(struct dirent *de, char *file_name);
 bool in_array(char **array, int array_size, char *needle);
@@ -32,8 +34,7 @@ void main(int argc, char *argv[])
         return;
     }
 
-    __FILE_ = argv[argc - 1];
-
+    __FILE_ = normalize_pattern(argv[argc - 1]);
     if (argc == 2)
     {
         strcpy(__DIR_, ".");
@@ -60,6 +61,38 @@ void main(int argc, char *argv[])
             search_file_with_options(__DIR_, flags, argc - 3, __FILE_);
         }
     }
+}
+
+char *normalize_pattern(char *pattern){
+    int i= 0;
+
+    while(pattern[i] != '\0'){
+
+        if(pattern[i] == '*' && pattern[i+1] == '?'){
+            pattern[i] ='?';
+            pattern[i+1] = '*';
+            pattern = remove_consecutive_occurences(pattern,'*');
+        }
+        i++;
+    }
+
+    return remove_consecutive_occurences(pattern,'*');
+}
+char* remove_consecutive_occurences(char *word,char character){
+    int i= 0,k=0;
+    char static new_word[1000];
+
+    while(word[i] != '\0'){
+
+        if(word[i] != character || word[i] == character && word[i+1] == '\0' || word[i] == character && word[i+1] != character ){
+            new_word[k] = word[i];
+            k++;
+        }
+        i++;
+    }
+
+    new_word[k] = '\0';
+    return new_word;
 }
 
 bool is_it_our_file(struct dirent *de, char *file_name)
@@ -197,7 +230,7 @@ bool does_the_file_match_the_wildcard_pattern(char *file, char *pattern)
     bool match = strcmp(file, pattern) == 0 ? true : false;
     int i = 0, k = 0;
 
-    if (match)
+    if (match == true)
         return true;
 
     match = true;
@@ -207,10 +240,10 @@ bool does_the_file_match_the_wildcard_pattern(char *file, char *pattern)
         if(pattern[i] == '\0' && file[k] != '\0'){
             return false;
         }
+        
         if (pattern[i] == '?' && pattern[i + 1] == '\0' && file[k + 1] != '\0')
         {
-            i++;
-            match = false;
+            return false;
         }
         else if (pattern[i] == '?')
         {
@@ -232,13 +265,11 @@ bool does_the_file_match_the_wildcard_pattern(char *file, char *pattern)
                 i++;
                 if (file[k] == '\0')
                 {
-                    match = false;
-                    break;
+                   return false;
                 }
             }
             else if (pattern[i + 1] == '\0')
             {
-                i++;
                 return true;
             }
         }
@@ -246,8 +277,7 @@ bool does_the_file_match_the_wildcard_pattern(char *file, char *pattern)
         {
             if (file[k] != pattern[i])
             {
-                match = false;
-                break;
+                return false;
             }
             i++;
             k++;
